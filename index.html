@@ -72,33 +72,35 @@
     flex-shrink:0;
     position:relative;
     display:flex; align-items:center; justify-content:center;
-    height:56px;
-    padding:0 20px;
+    height:64px;
+    padding:0 72px;
   }
   .btn-back{
     position:absolute; left:12px; top:50%; transform:translateY(-50%);
     display:flex; align-items:center; gap:4px;
     font-family:var(--font);
     font-weight:800;
-    font-size:16px;
+    font-size:18px;
     color:var(--ink);
     background:none;
     border:none;
     cursor:pointer;
-    padding:8px 10px 8px 6px;
+    padding:8px 12px 8px 8px;
     border-radius:50px;
     transition:background .15s;
     z-index:2;
+    white-space:nowrap;
   }
   .btn-back:active{ background:var(--line); }
-  .btn-back svg{ width:20px; height:20px; flex-shrink:0; }
+  .btn-back svg{ width:22px; height:22px; flex-shrink:0; }
   .nav-title{
     font-family:var(--font);
     font-weight:900;
-    font-size:20px;
+    font-size:22px;
     color:var(--ink);
     letter-spacing:.04em;
     text-align:center;
+    width:100%;
   }
 
   /* ── 共用：54×85 比例框 ── */
@@ -365,6 +367,7 @@
     border-radius:20px;
     box-shadow:0 14px 30px -10px #00000022;
     border:2px solid var(--line);
+    display:none;
   }
   .qr-wrap canvas{ display:block; width:180px !important; height:180px !important; }
   .qr-label{
@@ -408,7 +411,7 @@
           <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           返回
         </button>
-        <span class="nav-title">選擇你的相框</span>
+        <span class="nav-title">選擇相框</span>
       </div>
       <div class="frames-scroll" id="framesScroll"></div>
       <div class="frames-footer">
@@ -423,7 +426,7 @@
           <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           返回
         </button>
-        <span class="nav-title">來個大大的微笑吧！😄</span>
+        <span class="nav-title">來個大大的微笑！</span>
       </div>
       <div class="ratio-box cam-box" id="camBox">
         <video id="video" autoplay playsinline muted></video>
@@ -475,6 +478,8 @@
   <canvas id="captureCanvasFull"></canvas>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script>
 /* =========================================================
    設定區
@@ -795,14 +800,21 @@ async function showDownloadStage(finalDataUrl){
   document.getElementById('doneStage').style.display = 'flex';
   // 更新頂部標題
   const navTitle = document.querySelector('#screen-printing .nav-title');
-  if(navTitle) navTitle.textContent = '照片完成！🎉';
+  if(navTitle) navTitle.textContent = '照片完成！';
 
   const qrWrap = document.getElementById('qrWrap');
   const qrLabel = document.getElementById('qrLabel');
   const qrCanvas = document.getElementById('qrCanvas');
 
+  // 等待 QRCode 函式庫載入（最多 5 秒）
+  let waited = 0;
+  while(!window.QRCode && waited < 5000){
+    await new Promise(r=>setTimeout(r, 200)); waited += 200;
+  }
+
   if(IMGBB_CONFIG.enabled && window.QRCode){
     qrLabel.textContent = '正在產生下載連結…';
+    qrWrap.style.display = '';
     try{
       const url = await uploadToImgbb(finalDataUrl);
       qrCanvas.width = qrCanvas.height = 0;
@@ -814,17 +826,16 @@ async function showDownloadStage(finalDataUrl){
       qrWrap.style.display = 'none';
       qrLabel.textContent = '無法產生 QR Code，請改用 Email 接收';
     }
+  } else if(window.QRCode){
+    try{
+      qrCanvas.width = qrCanvas.height = 0;
+      QRCode.toCanvas(qrCanvas, 'https://pluddie.studio', { width:180, margin:1, color:{ dark:'#3E2A1A', light:'#FFFFFF' } });
+      qrWrap.style.display = '';
+      qrLabel.textContent = '設定 imgbb 後即可掃碼下載照片';
+    }catch(e){ qrWrap.style.display = 'none'; }
   } else {
-    if(window.QRCode){
-      try{
-        qrCanvas.width = qrCanvas.height = 0;
-        QRCode.toCanvas(qrCanvas, 'https://pluddie.studio', { width:180, margin:1, color:{ dark:'#3E2A1A', light:'#FFFFFF' } });
-        qrWrap.style.display = '';
-        qrLabel.textContent = '設定 imgbb 後即可掃碼下載照片';
-      }catch(e){ qrWrap.style.display = 'none'; }
-    } else {
-      qrWrap.style.display = 'none';
-    }
+    qrWrap.style.display = 'none';
+    qrLabel.textContent = '無法載入 QR Code 函式庫';
   }
 }
 
@@ -834,9 +845,6 @@ document.getElementById('btnNextShot').addEventListener('click', ()=>{
   goTo('welcome');
 });
 </script>
-
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
 
 </body>
 </html>
