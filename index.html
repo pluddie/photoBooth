@@ -6,8 +6,8 @@
 <title>小女孩和花花獅拍貼機</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Noto Sans TC (粗圓中文) + Nunito (粗圓英文) -->
-<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Noto+Sans+TC:wght@700;900&display=swap" rel="stylesheet">
+<!-- Zen Maru Gothic (圓體，支援繁體中文) + Nunito (粗圓英數) -->
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#FDF3EB;
@@ -20,8 +20,8 @@
     --accent2-soft:#FEF0E3;
     --line:#EDD9C8;
 
-    /* 全站統一粗圓字體：中文用 Noto Sans TC，英文/數字用 Nunito */
-    --font:'Nunito','Noto Sans TC',sans-serif;
+    /* 全站粗圓字體：中文 Zen Maru Gothic，英數 Nunito */
+    --font:'Nunito','Zen Maru Gothic',sans-serif;
   }
 
   *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
@@ -67,28 +67,39 @@
   }
   .screen.active{ opacity:1; visibility:visible; pointer-events:auto; }
 
-  /* ── 共用頂部導覽列（含返回） ── */
+  /* ── 共用頂部導覽列 ── */
   .nav-bar{
     flex-shrink:0;
-    display:flex; align-items:center;
-    padding:16px 20px 0;
-    min-height:56px;
+    position:relative;
+    display:flex; align-items:center; justify-content:center;
+    height:56px;
+    padding:0 20px;
   }
   .btn-back{
-    display:flex; align-items:center; gap:6px;
+    position:absolute; left:12px; top:50%; transform:translateY(-50%);
+    display:flex; align-items:center; gap:4px;
     font-family:var(--font);
     font-weight:800;
-    font-size:17px;
+    font-size:16px;
     color:var(--ink);
     background:none;
     border:none;
     cursor:pointer;
-    padding:8px 12px 8px 6px;
+    padding:8px 10px 8px 6px;
     border-radius:50px;
     transition:background .15s;
+    z-index:2;
   }
   .btn-back:active{ background:var(--line); }
-  .btn-back svg{ width:22px; height:22px; flex-shrink:0; }
+  .btn-back svg{ width:20px; height:20px; flex-shrink:0; }
+  .nav-title{
+    font-family:var(--font);
+    font-weight:900;
+    font-size:20px;
+    color:var(--ink);
+    letter-spacing:.04em;
+    text-align:center;
+  }
 
   /* ── 共用：54×85 比例框 ── */
   .ratio-box{
@@ -181,17 +192,6 @@
   /* ===================== 2. 選擇相框 ===================== */
   #screen-frames{ padding:0; }
 
-  .frames-header{
-    flex-shrink:0;
-    padding:4px 24px 14px;
-    text-align:center;
-    font-family:var(--font);
-    font-weight:900;
-    font-size:24px;
-    color:var(--ink);
-    letter-spacing:.04em;
-  }
-
   .frames-scroll{
     flex:1;
     overflow-y:auto;
@@ -255,15 +255,6 @@
   #screen-camera{
     align-items:center; justify-content:space-between;
     padding:0 24px 28px;
-  }
-  .cam-title{
-    font-family:var(--font);
-    font-weight:900;
-    font-size:26px;
-    color:var(--ink);
-    text-align:center;
-    letter-spacing:.03em;
-    padding:8px 0 6px;
   }
   .cam-box{
     width:min(68vw, 300px);
@@ -417,8 +408,8 @@
           <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           返回
         </button>
+        <span class="nav-title">選擇你的相框</span>
       </div>
-      <div class="frames-header">選擇你的相框</div>
       <div class="frames-scroll" id="framesScroll"></div>
       <div class="frames-footer">
         <button class="btn btn-fill" id="btnFrameConfirm" disabled>確認選擇</button>
@@ -432,8 +423,8 @@
           <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           返回
         </button>
+        <span class="nav-title">來個大大的微笑吧！😄</span>
       </div>
-      <div class="cam-title">來個大大的微笑吧！😄</div>
       <div class="ratio-box cam-box" id="camBox">
         <video id="video" autoplay playsinline muted></video>
         <canvas id="capturedCanvas"></canvas>
@@ -454,6 +445,7 @@
           <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
           返回
         </button>
+        <span class="nav-title">照片列印中</span>
       </div>
       <div class="printing-inner">
         <div class="ratio-box print-box" id="printBox">
@@ -723,12 +715,12 @@ function finishCamera(){
 /* ---------- 4. 列印中 ---------- */
 // 列印頁返回→回到拍照（重新開鏡頭）
 document.getElementById('btnPrintBack').addEventListener('click', ()=>{
-  // 只有在 printingStage 顯示中（還在跑 bar）時才有意義返回到拍照重拍
-  // 若已完成則回到相框選擇
+  const navTitle = document.querySelector('#screen-printing .nav-title');
+  if(navTitle) navTitle.textContent = '照片列印中';
   const printing = document.getElementById('printingStage');
   if(printing.style.display !== 'none'){
     goTo('camera');
-    startCamera(); // 重新開鏡頭
+    startCamera();
   } else {
     state.selectedFrame = null;
     document.getElementById('btnFrameConfirm').disabled = true;
@@ -801,6 +793,9 @@ async function uploadToImgbb(dataUrl){
 async function showDownloadStage(finalDataUrl){
   document.getElementById('printingStage').style.display = 'none';
   document.getElementById('doneStage').style.display = 'flex';
+  // 更新頂部標題
+  const navTitle = document.querySelector('#screen-printing .nav-title');
+  if(navTitle) navTitle.textContent = '照片完成！🎉';
 
   const qrWrap = document.getElementById('qrWrap');
   const qrLabel = document.getElementById('qrLabel');
