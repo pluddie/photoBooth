@@ -49,7 +49,6 @@
     letter-spacing:.14em;
     color:var(--muted);
     background:var(--bg);
-    border-top:1px solid var(--line);
     z-index:100;
   }
 
@@ -168,7 +167,6 @@
     justify-content:center;
     height:64px;
     padding:0 16px;
-    border-bottom:1px solid var(--line);
     background:var(--bg);
   }
   .btn-back{
@@ -255,7 +253,6 @@
     display:flex; gap:14px;
     padding:14px 20px max(20px, env(safe-area-inset-bottom));
     background:var(--bg);
-    border-top:1px solid var(--line);
   }
 
   /* ===================== 3. 拍照畫面 ===================== */
@@ -568,9 +565,9 @@ const FRAME_DATA = [
 
 const EMAILJS_CONFIG = {
   enabled: false,
-  publicKey: 'YOUR_PUBLIC_KEY',
-  serviceId: 'YOUR_SERVICE_ID',
-  templateId: 'YOUR_TEMPLATE_ID',
+  publicKey: 'tOXPtKhdfr5mQNlps',
+  serviceId: 'service_t7d5jeu',
+  templateId: 'template_ivd4njg',
   toEmail: 'your-phone-mailbox@example.com'
 };
 
@@ -610,7 +607,21 @@ function resetToWelcome(){
 }
 
 /* ---------- 1. 歡迎頁 ---------- */
-screens.welcome.addEventListener('click', ()=>{
+async function requestCameraPermission(){
+  if(state.stream && state.stream.active) return state.stream;
+  try{
+    state.stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:'user', width:{ideal:1080}, height:{ideal:1440} }, audio:false
+    });
+  }catch(err){
+    console.error('相機權限請求失敗', err);
+    state.stream = null;
+  }
+  return state.stream;
+}
+
+screens.welcome.addEventListener('click', async ()=>{
+  await requestCameraPermission();
   renderFrameList();
   goTo('frames');
 });
@@ -692,13 +703,11 @@ async function startCamera(){
   }
   resetCameraState();
   goTo('camera');
-  try{
-    state.stream = await navigator.mediaDevices.getUserMedia({
-      video:{ facingMode:'user', width:{ideal:1080}, height:{ideal:1440} }, audio:false
-    });
-    document.getElementById('video').srcObject = state.stream;
-  }catch(err){
-    alert('無法開啟鏡頭，請確認已允許相機權限。\n' + err.message);
+  const stream = await requestCameraPermission();
+  if(stream){
+    document.getElementById('video').srcObject = stream;
+  } else {
+    alert('無法開啟鏡頭。請至瀏覽器的網站設定中允許相機權限後再試一次。');
     goTo('frames');
   }
 }
