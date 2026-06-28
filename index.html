@@ -8,8 +8,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet">
 
-<!-- QR Code 由 Google Charts API 產生，不需要任何 JS library -->
-
 <style>
   :root{
     --bg:#FDF3EB;
@@ -450,7 +448,6 @@
   }
   .popup-btn:active{ transform:scale(.97); }
 
-  #captureCanvasFull{ display:none; }
 </style>
 </head>
 <body>
@@ -500,7 +497,7 @@
         <span class="page-title">來個大大的微笑！</span>
       </div>
       <div class="cam-content">
-        <div class="ratio-box cam-box" id="camBox">
+        <div class="ratio-box cam-box">
           <video id="video" autoplay playsinline muted></video>
           <canvas id="capturedCanvas"></canvas>
           <img class="frame-overlay-img" id="cameraFrameOverlay" src="" style="display:none">
@@ -525,7 +522,7 @@
       </div>
 
       <div class="printing-inner">
-        <div class="ratio-box print-box" id="printBox">
+        <div class="ratio-box print-box">
           <canvas id="resultCanvas"></canvas>
         </div>
 
@@ -547,7 +544,7 @@
   <div class="popup-backdrop" id="donePopup">
     <div class="popup-card">
       <div class="popup-icon">🎉</div>
-      <div class="popup-title">照片已準備好！<br>掃描下載你的照片</div>
+      <div class="popup-title">照片已準備好！<br>掃描下載照片</div>
       <div class="popup-qr-wrap" id="popupQrWrap">
         <img id="popupQrImg" alt="QR Code" src="">
       </div>
@@ -557,7 +554,6 @@
   </div>
 
   <div id="copyright-footer">© PLUDDIE STUDIO</div>
-  <canvas id="captureCanvasFull"></canvas>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -579,8 +575,8 @@ const EMAILJS_CONFIG = {
 };
 
 const IMGBB_CONFIG = {
-  enabled: false,
-  apiKey: 'YOUR_IMGBB_API_KEY',
+  enabled: true,
+  apiKey: '51ef997908f65842badc1eddf498bbe8',
 };
 
 const OUT_W = 1080, OUT_H = 1700;
@@ -607,13 +603,13 @@ function goTo(name){
   screens[name].classList.add('active');
 }
 
-/* ---------- 1. 歡迎頁 ---------- */
-window.addEventListener('load', ()=>{
-  navigator.mediaDevices.getUserMedia({ video:true, audio:false })
-    .then(s=>{ s.getTracks().forEach(t=>t.stop()); })
-    .catch(()=>{});
-});
+function resetToWelcome(){
+  state.selectedFrame = null;
+  document.getElementById('btnFrameConfirm').disabled = true;
+  goTo('welcome');
+}
 
+/* ---------- 1. 歡迎頁 ---------- */
 screens.welcome.addEventListener('click', ()=>{
   renderFrameList();
   goTo('frames');
@@ -682,11 +678,7 @@ function renderFrameList(){
   });
 }
 
-document.getElementById('btnFrameBack').addEventListener('click', ()=>{
-  state.selectedFrame = null;
-  document.getElementById('btnFrameConfirm').disabled = true;
-  goTo('welcome');
-});
+document.getElementById('btnFrameBack').addEventListener('click', resetToWelcome);
 
 document.getElementById('btnFrameConfirm').addEventListener('click', startCamera);
 
@@ -736,10 +728,7 @@ document.getElementById('btnConfirmShot').addEventListener('click', ()=>{
 
 document.getElementById('btnRetake').addEventListener('click', ()=>{
   if(state.shotState !== 'captured' || state.counting) return;
-  state.shotState = 'live'; state.capturedDataUrl = null;
-  document.getElementById('video').classList.remove('hide');
-  document.getElementById('capturedCanvas').classList.remove('show');
-  document.getElementById('btnRetake').disabled = true;
+  resetCameraState();
 });
 
 function setCamButtonsDisabled(d){
@@ -802,14 +791,11 @@ document.getElementById('btnPrintBack').addEventListener('click', ()=>{
   if(popup.classList.contains('open')){
     // 完成畫面：返回首頁
     popup.classList.remove('open');
-    state.selectedFrame = null;
-    document.getElementById('btnFrameConfirm').disabled = true;
     document.getElementById('printNavTitle').textContent = '照片列印中';
     document.getElementById('printingStageInfo').style.display = '';
-    goTo('welcome');
+    resetToWelcome();
   } else {
-    // 列印中：返回拍照
-    goTo('camera');
+    // 列印中：返回拍照（startCamera 內部會切換畫面）
     startCamera();
   }
 });
@@ -887,10 +873,10 @@ async function showDownloadStage(finalDataUrl){
   const qrLabel = document.getElementById('popupQrLabel');
   const qrImg = document.getElementById('popupQrImg');
 
-  // 用 Google Charts API 產生 QR code — 純 <img> src，不需要任何 JS library
-  function makeGoogleQR(url){
+  // 用 QR Server API 產生 QR code（穩定、免費、不需金鑰）— 純 <img> src
+  function makeQrCodeUrl(url){
     const encoded = encodeURIComponent(url);
-    return `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=${encoded}&choe=UTF-8`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encoded}`;
   }
 
   // 開啟 popup
@@ -901,16 +887,16 @@ async function showDownloadStage(finalDataUrl){
     qrWrap.style.display = '';
     try{
       const url = await uploadToImgbb(finalDataUrl);
-      qrImg.src = makeGoogleQR(url);
-      qrLabel.textContent = '用手機掃描下載你的照片';
+      qrImg.src = makeQrCodeUrl(url);
+      qrLabel.textContent = '掃描下載照片';
     }catch(err){
       console.error('上傳失敗', err);
       qrWrap.style.display = 'none';
       qrLabel.textContent = '無法上傳照片，請改用 Email 接收';
     }
   } else {
-    // 示範：顯示 pluddie.studio 的 QR
-    qrImg.src = makeGoogleQR('https://pluddie.studio');
+    // imgbb 尚未設定時的示範 QR（指向品牌官網）
+    qrImg.src = makeQrCodeUrl('https://pluddie.studio');
     qrWrap.style.display = '';
     qrLabel.textContent = '設定 imgbb 後即可掃碼下載照片';
   }
@@ -918,9 +904,7 @@ async function showDownloadStage(finalDataUrl){
 
 document.getElementById('btnNextShot').addEventListener('click', ()=>{
   document.getElementById('donePopup').classList.remove('open');
-  state.selectedFrame = null;
-  document.getElementById('btnFrameConfirm').disabled = true;
-  goTo('welcome');
+  resetToWelcome();
 });
 </script>
 
