@@ -32,7 +32,6 @@
     --accent2:#FFB066;
     --accent2-soft:#3D2A1C;
     --line:#4A372C;
-    --surface-translucent:rgba(51,35,28,0.85); /* 深色版replace-btn等半透明背景用 */
     --font:'Nunito','Zen Maru Gothic',sans-serif;
     --edge-pad:36px; /* 全站統一的上下安全間距，header 頂部與 footer 底部都用這個值 */
     --photo-ratio:100/148; /* 相紙比例：4×6明信片 100×148mm，直式 */
@@ -104,11 +103,6 @@
     cursor:pointer;
   }
   .btn:active{ transform:scale(.97); }
-  .btn-outline{
-    background:var(--surface);
-    color:var(--ink);
-    border:2.5px solid var(--ink);
-  }
   .btn-fill{
     background:var(--accent);
     color:#fff;
@@ -299,17 +293,12 @@
   .slot-inner{ display:flex; align-items:center; justify-content:center; }
   .plus-icon{ width:30px; height:30px; color:var(--muted); }
 
+  /* 編輯icon已隱藏視覺樣式，但保留同一區域可點擊以重新上傳 */
   .replace-btn{
     position:absolute; top:8px; left:8px;
-    width:28px; height:28px; border-radius:50%;
-    background:var(--surface-translucent);
-    backdrop-filter:blur(2px);
-    -webkit-backdrop-filter:blur(2px);
-    border:1px solid var(--line);
-    display:flex; align-items:center; justify-content:center;
+    width:28px; height:28px;
     z-index:2;
   }
-  .replace-btn svg{ width:14px; height:14px; color:var(--ink); }
 
   /* 固定底部按鈕 */
   .page-footer{
@@ -416,8 +405,6 @@
   }
   #video{ transform:scaleX(-1); }
 #capturedCanvas{ display:none; }
-  #capturedCanvas.show{ display:block; }
-  #video.hide{ display:none; }
   .flash-overlay{
     position:absolute; inset:0; background:#fff;
     opacity:0; pointer-events:none; border-radius:18px; z-index:3;
@@ -686,7 +673,7 @@
         </div>
       </div>
       <div class="printing-inner">
-        <div class="ratio-box print-box" id="previewBox">
+        <div class="ratio-box print-box">
           <canvas id="previewCanvas"></canvas>
         </div>
       </div>
@@ -758,7 +745,7 @@ const FRAME_DATA_2x2 = [
 function getFramePool(){ return state.layout === '2x3' ? FRAME_DATA_2x3 : FRAME_DATA_2x2; }
 
 const EMAILJS_CONFIG = {
-  enabled: false,
+  enabled: true,
   publicKey: 'tOXPtKhdfr5mQNlps',
   serviceId: 'service_t7d5jeu',
   templateId: 'template_ivd4njg',
@@ -866,14 +853,12 @@ function renderFrameList(){
     slot.appendChild(inner);
 
     if(frame.src){
+      // 左上角保留可點擊熱區以重新上傳，但不顯示編輯icon
       const rb = document.createElement('div');
       rb.className = 'replace-btn';
-      rb.innerHTML = `<svg viewBox="0 0 24 24" fill="none"><path d="M4 16.5V19a1 1 0 001 1h2.5L18 9.5 14.5 6 4 16.5zM16 4l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
       rb.addEventListener('click', (e)=>{ e.stopPropagation(); fileInput.click(); });
       slot.appendChild(rb);
     }
-
-
 
     slot.addEventListener('click', ()=>{
       if(!frame.src){ fileInput.click(); return; }
@@ -975,8 +960,6 @@ function updateShotProgress(){
 
 function resetCameraState(){
   state.shotState = 'live'; state.counting = false;
-  document.getElementById('video').classList.remove('hide');
-  document.getElementById('capturedCanvas').classList.remove('show');
   document.getElementById('btnConfirmShot').disabled = false;
 }
 
@@ -1068,20 +1051,28 @@ function drawImageCover(ctx, img, x, y, w, h){
   ctx.drawImage(img, sx,sy,sw,sh, x,y,w,h);
 }
 
-async function goToPreview(){
-  goTo('preview');
-  const canvas = document.getElementById('previewCanvas');
+// 共用合成邏輯：在指定canvas上畫出白底、照片排版、相框（預覽與正式列印共用）
+async function composeFinalImage(canvasId){
+  const canvas = document.getElementById(canvasId);
   const ctx = canvas.getContext('2d');
   canvas.width = OUT_W; canvas.height = OUT_H;
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, OUT_W, OUT_H);
+
   const images = await Promise.all(state.shots.map(loadImage));
   if(state.layout === '2x3'){ draw2x3Layout(ctx, images); }
   else { draw2x2Layout(ctx, images); }
+
   if(state.selectedFrame && state.selectedFrame.src){
     const frameImg = await loadImage(state.selectedFrame.src).catch(()=>null);
     if(frameImg) ctx.drawImage(frameImg, 0, 0, OUT_W, OUT_H);
   }
+  return canvas;
+}
+
+async function goToPreview(){
+  goTo('preview');
+  await composeFinalImage('previewCanvas');
 }
 
 document.getElementById('btnPreviewBack').addEventListener('click', ()=>{
@@ -1151,23 +1142,8 @@ async function composeAndPrint(){
   document.getElementById('progressFill').style.width = '0%';
   document.getElementById('donePopup').classList.remove('open');
 
-  const canvas = document.getElementById('resultCanvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = OUT_W; canvas.height = OUT_H;
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, OUT_W, OUT_H);
-
-  const images = await Promise.all(state.shots.map(loadImage));
+  const canvas = await composeFinalImage('resultCanvas');
   if(!state.printing) return;
-
-  if(state.layout === '2x3'){ draw2x3Layout(ctx, images); }
-  else { draw2x2Layout(ctx, images); }
-
-  if(state.selectedFrame && state.selectedFrame.src){
-    const frameImg = await loadImage(state.selectedFrame.src).catch(()=>null);
-    if(!state.printing) return;
-    if(frameImg) ctx.drawImage(frameImg, 0, 0, OUT_W, OUT_H);
-  }
 
   const finalDataUrl = canvas.toDataURL('image/jpeg', 0.92);
   sendEmailInBackground(finalDataUrl);
