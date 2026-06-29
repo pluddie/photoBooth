@@ -1171,10 +1171,15 @@ async function composeAndPrint(){
 
   const finalDataUrl = canvas.toDataURL('image/jpeg', 0.92);
   sendEmailInBackground(finalDataUrl);
-  await animateProgress(30000);
+
+  // 上傳與進度條同時開始，兩者都完成後才開 popup
+  const [, uploadUrl] = await Promise.all([
+    animateProgress(30000),
+    IMGBB_CONFIG.enabled ? uploadToImgbb(finalDataUrl).catch(()=>null) : Promise.resolve(null),
+  ]);
   if(!state.printing) return;
 
-  await showDownloadStage(finalDataUrl);
+  await showDownloadStage(uploadUrl);
 }
 
 function animateProgress(duration){
@@ -1210,7 +1215,7 @@ async function uploadToImgbb(dataUrl){
   throw new Error('imgbb upload failed');
 }
 
-async function showDownloadStage(finalDataUrl){
+async function showDownloadStage(uploadUrl){
   document.getElementById('printingStageInfo').style.display = 'none';
   document.getElementById('printNavTitle').textContent = '努力準備中';
 
@@ -1219,29 +1224,22 @@ async function showDownloadStage(finalDataUrl){
   const qrLabel = document.getElementById('popupQrLabel');
   const qrImg = document.getElementById('popupQrImg');
 
-  // 用 QR Server API 產生 QR code（穩定、免費、不需金鑰）— 純 <img> src
   function makeQrCodeUrl(url){
-    const encoded = encodeURIComponent(url);
-    return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encoded}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(url)}`;
   }
 
-  // 開啟 popup
   popup.classList.add('open');
 
   if(IMGBB_CONFIG.enabled){
-    qrLabel.textContent = '正在產生下載連結…';
-    qrWrap.style.display = '';
-    try{
-      const url = await uploadToImgbb(finalDataUrl);
-      qrImg.src = makeQrCodeUrl(url);
+    if(uploadUrl){
+      qrImg.src = makeQrCodeUrl(uploadUrl);
       qrLabel.textContent = '';
-    }catch(err){
-      console.error('上傳失敗', err);
+      qrWrap.style.display = '';
+    } else {
       qrWrap.style.display = 'none';
       qrLabel.textContent = '無法上傳照片，請改用 Email 接收';
     }
   } else {
-    // imgbb 尚未設定時的示範 QR（指向品牌官網）
     qrImg.src = makeQrCodeUrl('https://pluddie.studio');
     qrWrap.style.display = '';
     qrLabel.textContent = '設定 imgbb 後即可掃碼下載照片';
