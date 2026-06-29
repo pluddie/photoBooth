@@ -782,6 +782,7 @@ let state = {
   shots: [],
   shotState: 'live',
   counting: false,
+  printing: false,     // 是否正在列印流程中（用於取消背景 async）
 };
 
 const screens = {
@@ -1084,9 +1085,9 @@ async function goToPreview(){
 }
 
 document.getElementById('btnPreviewBack').addEventListener('click', ()=>{
+  state.printing = false;
   resetCameraState();
   goTo('camera');
-  // 重用已有的 stream，不重新授權
   if(state.stream && state.stream.active){
     document.getElementById('video').srcObject = state.stream;
   }
@@ -1100,6 +1101,7 @@ document.getElementById('btnConfirmPrint').addEventListener('click', ()=>{
 
 /* ---------- 4. 列印中 ---------- */
 document.getElementById('btnPrintBack').addEventListener('click', ()=>{
+  state.printing = false;
   goTo('preview');
 });
 
@@ -1143,7 +1145,8 @@ function draw2x2Layout(ctx, images){
 }
 
 async function composeAndPrint(){
-  // 重置狀態
+  state.printing = true;
+
   document.getElementById('printingStageInfo').style.display = '';
   document.getElementById('progressFill').style.width = '0%';
   document.getElementById('donePopup').classList.remove('open');
@@ -1155,21 +1158,22 @@ async function composeAndPrint(){
   ctx.fillRect(0, 0, OUT_W, OUT_H);
 
   const images = await Promise.all(state.shots.map(loadImage));
+  if(!state.printing) return;
 
-  if(state.layout === '2x3'){
-    draw2x3Layout(ctx, images);
-  } else {
-    draw2x2Layout(ctx, images);
-  }
+  if(state.layout === '2x3'){ draw2x3Layout(ctx, images); }
+  else { draw2x2Layout(ctx, images); }
 
   if(state.selectedFrame && state.selectedFrame.src){
     const frameImg = await loadImage(state.selectedFrame.src).catch(()=>null);
+    if(!state.printing) return;
     if(frameImg) ctx.drawImage(frameImg, 0, 0, OUT_W, OUT_H);
   }
 
   const finalDataUrl = canvas.toDataURL('image/jpeg', 0.92);
   sendEmailInBackground(finalDataUrl);
   await animateProgress(30000);
+  if(!state.printing) return;
+
   await showDownloadStage(finalDataUrl);
 }
 
