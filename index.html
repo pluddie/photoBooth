@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>小女孩和花花獅拍貼機</title>
 
 <!-- iOS「加到主畫面」全螢幕設定 -->
@@ -12,7 +15,7 @@
 <meta name="apple-mobile-web-app-title" content="拍貼機">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#FDF3EB">
+<meta name="theme-color" content="#241712">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,16 +23,19 @@
 
 <style>
   :root{
-    --bg:#FDF3EB;
-    --surface:#FFFFFF;
-    --ink:#3E2A1A;
-    --muted:#B89880;
-    --accent:#E87830;
-    --accent-soft:#FDEADB;
-    --accent2:#C8691A;
-    --accent2-soft:#FEF0E3;
-    --line:#EDD9C8;
+    --bg:#241712;
+    --surface:#33231C;
+    --ink:#FBEEE3;
+    --muted:#A98770;
+    --accent:#FF9248;
+    --accent-soft:#4A2E1C;
+    --accent2:#FFB066;
+    --accent2-soft:#3D2A1C;
+    --line:#4A372C;
+    --surface-translucent:rgba(51,35,28,0.85); /* 深色版replace-btn等半透明背景用 */
     --font:'Nunito','Zen Maru Gothic',sans-serif;
+    --edge-pad:36px; /* 全站統一的上下安全間距，header 頂部與 footer 底部都用這個值 */
+    --photo-ratio:100/148; /* 相紙比例：4×6明信片 100×148mm，直式 */
   }
 
   *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
@@ -50,12 +56,12 @@
     justify-content:center;
   }
 
-  /* 響應式外框：維持平板尺寸版面，超寬螢幕時左右留白 */
+  /* 響應式外框：全螢幕填滿，不限制寬度 */
   #app-shell{
     width:100%;
-    max-width:720px;
     height:100%;
     position:relative;
+    overflow:hidden;
     display:flex; flex-direction:column;
   }
 
@@ -109,9 +115,21 @@
   }
   .btn-fill:disabled{ opacity:.35; }
 
-  /* ── 共用：54×85 比例框 ── */
+  /* 桌面版：各頁面內容置中，背景仍全螢幕填滿 */
+  .page-header,
+  .frames-body,
+  .layout-options,
+  .cam-content,
+  .printing-inner,
+  .page-footer{
+    max-width:720px;
+    margin-left:auto;
+    margin-right:auto;
+    width:100%;
+    box-sizing:border-box;
+  }
   .ratio-box{
-    aspect-ratio:54/85;
+    aspect-ratio:var(--photo-ratio);
     border-radius:20px;
     overflow:hidden;
     position:relative;
@@ -165,7 +183,7 @@
     border-radius:50px;
     padding:22px 52px;
     animation:pulseScale 1.8s ease-in-out infinite;
-    box-shadow:0 8px 24px -6px #E8783055;
+    box-shadow:0 8px 24px -6px #FF924855;
     cursor:pointer;
   }
   @keyframes pulseScale{
@@ -179,16 +197,20 @@
     padding:0;
   }
 
-  /* 固定標題區 */
+  /* 固定標題區：外層只負責頂部安全間距，內層才是實際標題列（高度固定、無額外padding，
+     確保「絕對定位置中」的返回鈕跟「flex置中」的標題用同一個基準點，才會真正對齊） */
   .page-header{
     flex-shrink:0;
+    padding-top:max(var(--edge-pad), env(safe-area-inset-top));
+    background:var(--bg);
+  }
+  .page-header-row{
     position:relative;
     display:flex;
     align-items:center;
     justify-content:center;
-    min-height:64px;
-    padding:max(28px, env(safe-area-inset-top)) 16px 0;
-    background:var(--bg);
+    height:64px;
+    padding:0 16px;
   }
   .btn-back{
     position:absolute; left:12px; top:50%; transform:translateY(-50%);
@@ -238,33 +260,33 @@
   .frames-scroll::-webkit-scrollbar{ display:none; }
   .scroll-hint{
     flex-shrink:0;
-    width:34px;
+    width:40px;
     display:flex;
     flex-direction:column;
     align-items:center;
     justify-content:center;
-    gap:10px;
+    gap:14px;
     padding:16px 0;
     color:var(--muted);
   }
-  .scroll-hint-arrow{ width:13px; height:9px; flex-shrink:0; }
+  .scroll-hint-arrow{ width:22px; height:14px; flex-shrink:0; }
   .scroll-hint-text{
     writing-mode:vertical-rl;
     text-orientation:mixed;
     font-family:var(--font);
     font-weight:700;
-    font-size:13px;
+    font-size:17px;
     letter-spacing:.15em;
     white-space:nowrap;
   }
   .frame-slot{
     width:100%;
-    aspect-ratio:54/85;
+    aspect-ratio:var(--photo-ratio);
     position:relative;
     border-radius:16px;
     border:2px dashed var(--line);
     background:var(--surface);
-    box-shadow:0 4px 14px -6px #00000014;
+    box-shadow:0 4px 14px -6px #00000040;
     transition:border-color .25s, background .25s, transform .15s;
     overflow:hidden;
   }
@@ -277,20 +299,23 @@
   .slot-inner{ display:flex; align-items:center; justify-content:center; }
   .plus-icon{ width:30px; height:30px; color:var(--muted); }
   .sel-badge{
-    position:absolute; bottom:8px; right:8px; top:auto; left:auto;
-    width:28px; height:28px; border-radius:50%;
+    position:absolute; top:8px; left:8px; bottom:auto; right:auto;
+    width:26px; height:26px; border-radius:50%;
     background:var(--accent);
     display:flex; align-items:center; justify-content:center;
     opacity:0; transform:scale(.6);
     transition:opacity .2s, transform .2s;
-    z-index:2;
+    z-index:3;
+    box-shadow:0 2px 8px #00000040;
   }
   .frame-slot.selected .sel-badge{ opacity:1; transform:scale(1); }
   .sel-badge svg{ width:14px; height:14px; }
   .replace-btn{
     position:absolute; top:8px; left:8px;
     width:28px; height:28px; border-radius:50%;
-    background:#ffffffcc; backdrop-filter:blur(2px);
+    background:var(--surface-translucent);
+    backdrop-filter:blur(2px);
+    -webkit-backdrop-filter:blur(2px);
     border:1px solid var(--line);
     display:flex; align-items:center; justify-content:center;
     z-index:2;
@@ -301,8 +326,59 @@
   .page-footer{
     flex-shrink:0;
     display:flex; gap:14px;
-    padding:14px 20px max(28px, env(safe-area-inset-bottom));
+    padding:14px 20px max(var(--edge-pad), env(safe-area-inset-bottom));
     background:var(--bg);
+  }
+
+  /* ===================== 2b. 選擇排版 ===================== */
+  #screen-layout{
+    display:flex; flex-direction:column;
+  }
+  .layout-options{
+    flex:1;
+    display:flex; flex-direction:column;
+    justify-content:center;
+    gap:16px;
+    padding:20px 24px;
+    overflow-y:auto;
+    min-height:0;
+  }
+  .layout-option{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px;
+    width:100%;
+    flex:1;
+    min-height:80px;
+    max-height:220px;
+    padding:16px;
+    border-radius:24px;
+    border:2px solid var(--line);
+    background:var(--surface);
+    cursor:pointer;
+    text-align:center;
+    font-family:var(--font);
+    transition:border-color .2s, background .2s, transform .15s;
+    overflow:hidden;
+  }
+  .layout-option:active{ transform:scale(.98); }
+  .layout-option.selected{ border:2.5px solid var(--accent); background:var(--accent-soft); }
+  .layout-preview{
+    flex-shrink:0;
+    width:56px;
+    aspect-ratio:var(--photo-ratio);
+    display:grid; gap:3px;
+    padding:4px;
+    border-radius:10px;
+    background:var(--line);
+  }
+  .layout-preview span{ background:var(--surface); border-radius:2px; }
+  .layout-preview-2x2{ grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
+  .layout-preview-2x3{ grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr 1fr; }
+  .layout-option-text{ display:flex; flex-direction:column; gap:5px; }
+  .layout-option-title{
+    font-weight:900; font-size:22px; color:var(--ink);
+  }
+  .layout-option-desc{
+    font-weight:700; font-size:13px; color:var(--muted); line-height:1.5;
   }
 
   /* ===================== 3. 拍照畫面 ===================== */
@@ -322,14 +398,29 @@
     min-height:0;
   }
 
-  /* 相機預覽框：儘量大，不超出可用空間 */
+  /* 相機預覽框：依照模式顯示對應尺寸的鏡頭 */
   .cam-box{
-    /* 寬度最大撐到螢幕，高度受 flex 容器限制 */
-    width:min(calc((100dvh - 200px) * 54/85), calc(100vw - 40px));
-    box-shadow:0 18px 40px -10px #00000022;
-    border:3px solid var(--surface);
-    outline:1px solid var(--line);
+    --cam-ratio:552/470; /* 預設2x3模式 */
+    aspect-ratio:var(--cam-ratio) !important;
+    width:min(calc((100dvh - 280px) * 552/470), calc(100vw - 48px));
+    box-shadow:0 18px 40px -10px #00000055;
   }
+  .cam-box.mode-2x2{
+    --cam-ratio:552/600;
+    width:min(calc((100dvh - 280px) * 552/600), calc(100vw - 48px));
+  }
+  .print-box{
+    width:min(calc((100dvh - 330px) * 100/148), calc(100vw - 64px));
+    border-radius:4px !important;
+  }
+  .shot-progress{ display:flex; gap:10px; }
+  .shot-dot{
+    width:12px; height:12px; border-radius:50%;
+    background:var(--line);
+    transition:background .25s, transform .25s;
+  }
+  .shot-dot.done{ background:var(--accent); }
+  .shot-dot.current{ background:var(--accent); transform:scale(1.3); }
   .cam-box video, .cam-box canvas{
     position:absolute; inset:0;
     width:100%; height:100%; object-fit:cover;
@@ -375,15 +466,14 @@
   .printing-inner{
     flex:1;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    padding:16px 28px;
+    padding:16px 28px max(var(--edge-pad), env(safe-area-inset-bottom));
     gap:16px;
     min-height:0;
     overflow:hidden;
   }
 
   .print-box{
-    width:min(calc((100dvh - 260px) * 54/85), calc(100vw - 56px));
-    box-shadow:0 24px 50px -12px #00000026;
+    box-shadow:0 24px 50px -12px #00000060;
     animation:printPop .6s ease-out;
     flex-shrink:0;
   }
@@ -391,7 +481,7 @@
     0%{ opacity:0; transform:translateY(18px) scale(.96); }
     100%{ opacity:1; transform:translateY(0) scale(1); }
   }
-  .print-box canvas{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .print-box canvas, #previewCanvas{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
 
   .printing-text{
     font-family:var(--font);
@@ -425,8 +515,9 @@
   /* ── 完成 Popup ── */
   .popup-backdrop{
     position:absolute; inset:0; z-index:200;
-    background:#00000055;
-    backdrop-filter:blur(6px);
+    background:rgba(36,23,18,0.35); /* 不用純黑，改用主題深色低透明度，主要靠模糊製造區隔 */
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
     display:flex; align-items:center; justify-content:center;
     padding:24px;
     opacity:0; visibility:hidden;
@@ -441,7 +532,7 @@
     padding:32px 28px 28px;
     width:100%; max-width:360px;
     display:flex; flex-direction:column; align-items:center; gap:18px;
-    box-shadow:0 30px 60px -12px #00000040;
+    box-shadow:0 30px 60px -12px #00000070;
     transform:scale(.88) translateY(24px);
     transition:transform .35s cubic-bezier(.34,1.56,.64,1);
   }
@@ -458,7 +549,8 @@
     line-height:1.4;
   }
   .popup-qr-wrap{
-    background:var(--bg);
+    /* 強制保持白底，QR code 不能跟著深色主題反轉，否則會影響掃描成功率 */
+    background:#ffffff;
     border-radius:20px;
     padding:14px;
     border:2px solid var(--line);
@@ -515,14 +607,48 @@
       <div class="press-start">PRESS TO START</div>
     </div>
 
-    <!-- ===================== 2. 選擇相框 ===================== -->
+    <!-- ===================== 2. 選擇照片樣式 ===================== -->
+    <div class="screen" id="screen-layout">
+      <div class="page-header">
+        <div class="page-header-row">
+          <button class="btn-back" id="btnLayoutBack">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            返回
+          </button>
+          <span class="page-title">選擇照片樣式</span>
+        </div>
+      </div>
+      <div class="layout-options">
+        <button class="layout-option" data-layout="2x2">
+          <div class="layout-preview layout-preview-2x2"><span></span><span></span><span></span><span></span></div>
+          <div class="layout-option-text">
+            <div class="layout-option-title">2×2 組合</div>
+            <div class="layout-option-desc">共拍 4 張</div>
+          </div>
+        </button>
+        <button class="layout-option" data-layout="2x3">
+          <div class="layout-preview layout-preview-2x3"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="layout-option-text">
+            <div class="layout-option-title">2×3 組合</div>
+            <div class="layout-option-desc">共拍 3 張</div>
+          </div>
+        </button>
+      </div>
+      <div class="page-footer">
+        <button class="btn btn-fill" id="btnLayoutConfirm" disabled>確認選擇</button>
+      </div>
+    </div>
+
+    <!-- ===================== 3. 選擇相框 ===================== -->
     <div class="screen" id="screen-frames">
       <div class="page-header">
-        <button class="btn-back" id="btnFrameBack">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          返回
-        </button>
-        <span class="page-title">選擇相框</span>
+        <div class="page-header-row">
+          <button class="btn-back" id="btnFrameBack">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            返回
+          </button>
+          <span class="page-title">選擇相框</span>
+        </div>
       </div>
       <div class="frames-body">
         <div class="frames-scroll" id="framesScroll"></div>
@@ -540,35 +666,61 @@
     <!-- ===================== 3. 拍照畫面 ===================== -->
     <div class="screen" id="screen-camera">
       <div class="page-header">
-        <button class="btn-back" id="btnCameraBack">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          返回
-        </button>
-        <span class="page-title">來個大大的微笑！</span>
+        <div class="page-header-row">
+          <button class="btn-back" id="btnCameraBack">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            返回
+          </button>
+          <span class="page-title">姿勢預備備～！</span>
+        </div>
       </div>
       <div class="cam-content">
+        <div class="shot-progress" id="shotProgress">
+          <span class="shot-dot"></span><span class="shot-dot"></span><span class="shot-dot"></span><span class="shot-dot"></span>
+        </div>
         <div class="ratio-box cam-box">
           <video id="video" autoplay playsinline muted></video>
           <canvas id="capturedCanvas"></canvas>
-          <img class="frame-overlay-img" id="cameraFrameOverlay" src="" style="display:none">
           <div class="countdown-num" id="countdownNum"></div>
           <div class="flash-overlay" id="flashOverlay"></div>
         </div>
       </div>
       <div class="page-footer">
-        <button class="btn btn-outline" id="btnRetake" disabled>重新拍照</button>
-        <button class="btn btn-fill" id="btnConfirmShot">確認拍照</button>
+        <button class="btn btn-fill" id="btnConfirmShot">開始拍照</button>
       </div>
     </div>
 
-    <!-- ===================== 4. 列印中 / 完成 ===================== -->
+    <!-- ===================== 4b. 預覽明信片 ===================== -->
+    <div class="screen" id="screen-preview">
+      <div class="page-header">
+        <div class="page-header-row">
+          <button class="btn-back" id="btnPreviewBack">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            返回
+          </button>
+          <span class="page-title">怎麼這麼可愛！</span>
+        </div>
+      </div>
+      <div class="printing-inner">
+        <div class="ratio-box print-box" id="previewBox">
+          <canvas id="previewCanvas"></canvas>
+        </div>
+      </div>
+      <div class="page-footer">
+        <button class="btn btn-fill" id="btnConfirmPrint">確認列印</button>
+      </div>
+    </div>
+
+    <!-- ===================== 5. 列印中 / 完成 ===================== -->
     <div class="screen" id="screen-printing">
       <div class="page-header">
-        <button class="btn-back" id="btnPrintBack">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          返回
-        </button>
-        <span class="page-title" id="printNavTitle">照片列印中</span>
+        <div class="page-header-row">
+          <button class="btn-back" id="btnPrintBack">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            返回
+          </button>
+          <span class="page-title" id="printNavTitle">怎麼這麼可愛！</span>
+        </div>
       </div>
 
       <div class="printing-inner">
@@ -594,12 +746,12 @@
   <div class="popup-backdrop" id="donePopup">
     <div class="popup-card">
       <div class="popup-icon">🎉</div>
-      <div class="popup-title">照片已準備好！<br>掃描下載照片</div>
+      <div class="popup-title">照片準備好啦！</div>
       <div class="popup-qr-wrap" id="popupQrWrap">
         <img id="popupQrImg" alt="QR Code" src="">
       </div>
       <div class="popup-qr-label" id="popupQrLabel">正在產生 QR Code…</div>
-      <button class="popup-btn" id="btnNextShot">拍下一張</button>
+      <button class="popup-btn" id="btnNextShot">再玩一次</button>
     </div>
   </div>
 
@@ -612,10 +764,14 @@
 /* =========================================================
    設定區
 ========================================================= */
-const FRAME_DATA = [
-  { id:1, src:null },{ id:2, src:null },{ id:3, src:null },{ id:4, src:null },
-  { id:5, src:null },{ id:6, src:null },{ id:7, src:null },{ id:8, src:null },
+// 兩種版型各自獨立的相框圖庫，各 4 格
+const FRAME_DATA_2x3 = [
+  { id:'a1', src:null },{ id:'a2', src:null },{ id:'a3', src:null },{ id:'a4', src:null },
 ];
+const FRAME_DATA_2x2 = [
+  { id:'b1', src:null },{ id:'b2', src:null },{ id:'b3', src:null },{ id:'b4', src:null },
+];
+function getFramePool(){ return state.layout === '2x3' ? FRAME_DATA_2x3 : FRAME_DATA_2x2; }
 
 const EMAILJS_CONFIG = {
   enabled: false,
@@ -630,13 +786,17 @@ const IMGBB_CONFIG = {
   apiKey: '51ef997908f65842badc1eddf498bbe8',
 };
 
-const OUT_W = 1080, OUT_H = 1700;
+const OUT_W = 1181, OUT_H = 1748; // 100×148mm 明信片尺寸（4×6），300dpi
+const GRID_GAP = 16; // 拼貼格子之間的間距(px，以輸出畫布尺寸為基準)
+function getShotsRequired(){ return state.layout === '2x3' ? 3 : 4; }
 
 /* ========================================================= */
 
 let state = {
   selectedFrame: null,
+  layout: null,        // '2x2' 或 '2x4'
   stream: null,
+  shots: [],            // 已確認的拍攝結果(dataURL陣列)
   capturedDataUrl: null,
   shotState: 'live',
   counting: false,
@@ -645,7 +805,9 @@ let state = {
 const screens = {
   welcome:  document.getElementById('screen-welcome'),
   frames:   document.getElementById('screen-frames'),
+  layout:   document.getElementById('screen-layout'),
   camera:   document.getElementById('screen-camera'),
+  preview:  document.getElementById('screen-preview'),
   printing: document.getElementById('screen-printing'),
 };
 
@@ -656,7 +818,10 @@ function goTo(name){
 
 function resetToWelcome(){
   state.selectedFrame = null;
+  state.layout = null;
   document.getElementById('btnFrameConfirm').disabled = true;
+  document.getElementById('btnLayoutConfirm').disabled = true;
+  document.querySelectorAll('.layout-option').forEach(el=>el.classList.remove('selected'));
   goTo('welcome');
 }
 
@@ -676,12 +841,12 @@ async function requestCameraPermission(){
 
 screens.welcome.addEventListener('click', async ()=>{
   await requestCameraPermission();
-  renderFrameList();
-  goTo('frames');
+  goTo('layout');
 });
 
-/* ---------- 2. 相框選擇 ---------- */
+/* ---------- 3. 相框選擇 ---------- */
 function renderFrameList(){
+  const FRAME_DATA = getFramePool();
   const wrap = document.getElementById('framesScroll');
   wrap.innerHTML = '';
   FRAME_DATA.forEach(frame=>{
@@ -755,18 +920,46 @@ window.addEventListener('resize', ()=>{
   if(screens.frames.classList.contains('active')) enforceFrameSlotHeights();
 });
 
-document.getElementById('btnFrameBack').addEventListener('click', resetToWelcome);
+document.getElementById('btnFrameBack').addEventListener('click', ()=>{ goTo('layout'); });
 
 document.getElementById('btnFrameConfirm').addEventListener('click', startCamera);
 
-/* ---------- 3. 拍照畫面 ---------- */
+/* ---------- 2b. 選擇排版 ---------- */
+document.querySelectorAll('.layout-option').forEach(opt=>{
+  opt.addEventListener('click', ()=>{
+    document.querySelectorAll('.layout-option').forEach(o=>o.classList.remove('selected'));
+    opt.classList.add('selected');
+    state.layout = opt.dataset.layout;
+    document.getElementById('btnLayoutConfirm').disabled = false;
+  });
+});
+
+document.getElementById('btnLayoutBack').addEventListener('click', ()=>{
+  goTo('welcome');
+});
+
+document.getElementById('btnLayoutConfirm').addEventListener('click', ()=>{
+  renderFrameList();
+  goTo('frames');
+});
+
+/* ---------- 4. 拍照畫面 ---------- */
 async function startCamera(){
-  const overlay = document.getElementById('cameraFrameOverlay');
-  if(state.selectedFrame && state.selectedFrame.src){
-    overlay.src = state.selectedFrame.src; overlay.style.display = 'block';
+  // 依照版型設定鏡頭框比例
+  const camBox = document.querySelector('.cam-box');
+  if(state.layout === '2x2'){
+    camBox.classList.add('mode-2x2');
   } else {
-    overlay.style.display = 'none';
+    camBox.classList.remove('mode-2x2');
   }
+
+  // 依照版型產生進度點
+  const SHOTS = getShotsRequired();
+  const progressEl = document.getElementById('shotProgress');
+  progressEl.innerHTML = Array.from({length:SHOTS}, ()=>'<span class="shot-dot"></span>').join('');
+
+  state.shots = [];
+  updateShotProgress();
   resetCameraState();
   goTo('camera');
   const stream = await requestCameraPermission();
@@ -778,43 +971,63 @@ async function startCamera(){
   }
 }
 
+function updateShotProgress(){
+  const SHOTS = getShotsRequired();
+  document.querySelectorAll('#shotProgress .shot-dot').forEach((dot, i)=>{
+    dot.classList.toggle('done', i < state.shots.length);
+    dot.classList.toggle('current', i === state.shots.length && state.shots.length < SHOTS);
+  });
+  // 更新按鈕文字
+  const btn = document.getElementById('btnConfirmShot');
+  if(state.shots.length === 0){
+    btn.textContent = '開始拍照';
+  } else if(state.shots.length >= SHOTS){
+    btn.textContent = '預覽照片';
+  } else {
+    btn.innerHTML = `準備拍第 ${state.shots.length + 1} 張`;
+  }
+}
+
 function resetCameraState(){
-  state.shotState = 'live'; state.capturedDataUrl = null; state.counting = false;
+  state.shotState = 'live'; state.counting = false;
   document.getElementById('video').classList.remove('hide');
   document.getElementById('capturedCanvas').classList.remove('show');
-  document.getElementById('btnRetake').disabled = true;
   document.getElementById('btnConfirmShot').disabled = false;
 }
 
 document.getElementById('btnCameraBack').addEventListener('click', ()=>{
   if(state.stream) state.stream.getTracks().forEach(t=>t.stop());
+  state.shots = [];
   resetCameraState();
   goTo('frames');
 });
 
 document.getElementById('btnConfirmShot').addEventListener('click', ()=>{
-  if(state.shotState === 'live'){
-    if(state.counting) return;
+  if(state.counting) return;
+  const SHOTS = getShotsRequired();
+  if(state.shotState === 'waiting'){
+    // 已拍完一張，點按鈕決定下一步
+    if(state.shots.length >= SHOTS){
+      // 全部拍完 → 去預覽
+      goToPreview();
+    } else {
+      // 還有下一張 → 重設live並開始倒數
+      resetCameraState();
+      startCountdownThenShoot();
+    }
+  } else if(state.shotState === 'live'){
     startCountdownThenShoot();
-  } else {
-    finishCamera();
   }
-});
-
-document.getElementById('btnRetake').addEventListener('click', ()=>{
-  if(state.shotState !== 'captured' || state.counting) return;
-  resetCameraState();
 });
 
 function setCamButtonsDisabled(d){
   document.getElementById('btnConfirmShot').disabled = d;
-  document.getElementById('btnRetake').disabled = d || state.shotState !== 'captured';
 }
 
 function startCountdownThenShoot(){
   state.counting = true; setCamButtonsDisabled(true);
   const numEl = document.getElementById('countdownNum');
-  let n = 3; showCountdownNumber(numEl, n);
+  let n = 5; showCountdownNumber(numEl, n);
   const interval = setInterval(()=>{
     n--;
     if(n > 0){ showCountdownNumber(numEl, n); }
@@ -834,50 +1047,130 @@ function takeSnapshot(){
   const canvas = document.getElementById('capturedCanvas');
   const flash = document.getElementById('flashOverlay');
   flash.classList.remove('fire'); void flash.offsetWidth; flash.classList.add('fire');
-  canvas.width = OUT_W; canvas.height = OUT_H;
+
+  // 拍攝時依照layout決定輸出比例
+  const isSquare = state.layout === '2x2';
+  const snapW = 552, snapH = isSquare ? 600 : 470;
+  canvas.width = snapW; canvas.height = snapH;
   const ctx = canvas.getContext('2d');
-  drawVideoCover(ctx, video, OUT_W, OUT_H, true);
-  state.capturedDataUrl = canvas.toDataURL('image/jpeg', 0.92);
-  state.shotState = 'captured';
-  video.classList.add('hide'); canvas.classList.add('show');
-  document.getElementById('btnRetake').disabled = false;
+  drawVideoCover(ctx, video, snapW, snapH, true);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+
+  // 儲存這張照片
+  state.shots.push(dataUrl);
+  state.shotState = 'waiting'; // 等待使用者點按鈕才進下一張
+  state.counting = false;
+  setCamButtonsDisabled(false);
+  updateShotProgress();
+}
+
+// 計算「cover」裁切：把來源尺寸等比例裁切去填滿目標尺寸，回傳來源圖上要取用的矩形
+function coverCropRect(srcW, srcH, destW, destH){
+  const sr = srcW/srcH, tr = destW/destH;
+  if(sr > tr){ const sh=srcH, sw=sh*tr; return { sx:(srcW-sw)/2, sy:0, sw, sh }; }
+  const sw=srcW, sh=sw/tr; return { sx:0, sy:(srcH-sh)/2, sw, sh };
 }
 
 function drawVideoCover(ctx, video, W, H, mirror){
-  const vw=video.videoWidth, vh=video.videoHeight, vr=vw/vh, tr=W/H;
-  let sx,sy,sw,sh;
-  if(vr>tr){ sh=vh; sw=sh*tr; sx=(vw-sw)/2; sy=0; }
-  else{ sw=vw; sh=sw/tr; sx=0; sy=(vh-sh)/2; }
+  const {sx,sy,sw,sh} = coverCropRect(video.videoWidth, video.videoHeight, W, H);
   ctx.save();
   if(mirror){ ctx.translate(W,0); ctx.scale(-1,1); }
-  ctx.drawImage(video,sx,sy,sw,sh,0,0,W,H);
+  ctx.drawImage(video, sx,sy,sw,sh, 0,0,W,H);
   ctx.restore();
 }
 
-function finishCamera(){
+function drawImageCover(ctx, img, x, y, w, h){
+  const {sx,sy,sw,sh} = coverCropRect(img.naturalWidth, img.naturalHeight, w, h);
+  ctx.drawImage(img, sx,sy,sw,sh, x,y,w,h);
+}
+
+async function goToPreview(){
   if(state.stream) state.stream.getTracks().forEach(t=>t.stop());
+  goTo('preview');
+  // 合成預覽（含相框）
+  const canvas = document.getElementById('previewCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = OUT_W; canvas.height = OUT_H;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, OUT_W, OUT_H);
+  const images = await Promise.all(state.shots.map(loadImage));
+  if(state.layout === '2x3'){ draw2x3Layout(ctx, images); }
+  else { draw2x2Layout(ctx, images); }
+  if(state.selectedFrame && state.selectedFrame.src){
+    const frameImg = await loadImage(state.selectedFrame.src).catch(()=>null);
+    if(frameImg) ctx.drawImage(frameImg, 0, 0, OUT_W, OUT_H);
+  }
+}
+
+function finishCamera(){
+  goToPreview();
+}
+
+document.getElementById('btnPreviewBack').addEventListener('click', ()=>{
+  startCamera();
+});
+
+document.getElementById('btnConfirmPrint').addEventListener('click', ()=>{
   goTo('printing');
   composeAndPrint();
-}
+});
 
 /* ---------- 4. 列印中 ---------- */
 document.getElementById('btnPrintBack').addEventListener('click', ()=>{
   const popup = document.getElementById('donePopup');
   if(popup.classList.contains('open')){
-    // 完成畫面：返回首頁
     popup.classList.remove('open');
-    document.getElementById('printNavTitle').textContent = '照片列印中';
     document.getElementById('printingStageInfo').style.display = '';
     resetToWelcome();
   } else {
-    // 列印中：返回拍照（startCamera 內部會切換畫面）
-    startCamera();
+    goTo('preview');
   }
 });
 
+function loadImage(src){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    img.onload = ()=>resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// 2×3：3張照片，左右各印一份（共6格），框為552×470px，置上，下方有空間做裝飾
+function draw2x3Layout(ctx, images){
+  const FRAME_W = 552, FRAME_H = 470;
+  const scale = OUT_W / (FRAME_W * 2 + GRID_GAP * 3);
+  const cellW = Math.round(FRAME_W * scale);
+  const cellH = Math.round(FRAME_H * scale);
+  const gap = Math.round(GRID_GAP * scale);
+  for(let col = 0; col < 2; col++){
+    const x = gap + col * (cellW + gap);
+    for(let row = 0; row < 3; row++){
+      const y = gap + row * (cellH + gap);
+      drawImageCover(ctx, images[row], x, y, cellW, cellH);
+    }
+  }
+}
+
+// 2×2：4張照片各佔一格，框為552×600px，左二右二，置中，上下有空間
+function draw2x2Layout(ctx, images){
+  const FRAME_W = 552, FRAME_H = 600;
+  const scale = OUT_W / (FRAME_W * 2 + GRID_GAP * 3);
+  const cellW = Math.round(FRAME_W * scale);
+  const cellH = Math.round(FRAME_H * scale);
+  const gap = Math.round(GRID_GAP * scale);
+  const totalGridH = cellH * 2 + gap * 3;
+  const startY = Math.round((OUT_H - totalGridH) / 2);
+  images.forEach((img, i)=>{
+    const col = i % 2, row = Math.floor(i/2);
+    const x = gap + col*(cellW+gap);
+    const y = startY + gap + row*(cellH+gap);
+    drawImageCover(ctx, img, x, y, cellW, cellH);
+  });
+}
+
 async function composeAndPrint(){
   // 重置狀態
-  document.getElementById('printNavTitle').textContent = '照片列印中';
   document.getElementById('printingStageInfo').style.display = '';
   document.getElementById('progressFill').style.width = '0%';
   document.getElementById('donePopup').classList.remove('open');
@@ -885,19 +1178,20 @@ async function composeAndPrint(){
   const canvas = document.getElementById('resultCanvas');
   const ctx = canvas.getContext('2d');
   canvas.width = OUT_W; canvas.height = OUT_H;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, OUT_W, OUT_H);
 
-  await new Promise(resolve=>{
-    const img = new Image();
-    img.onload = ()=>{ ctx.drawImage(img,0,0,OUT_W,OUT_H); resolve(); };
-    img.src = state.capturedDataUrl;
-  });
+  const images = await Promise.all(state.shots.map(loadImage));
+
+  if(state.layout === '2x3'){
+    draw2x3Layout(ctx, images);
+  } else {
+    draw2x2Layout(ctx, images);
+  }
 
   if(state.selectedFrame && state.selectedFrame.src){
-    await new Promise(resolve=>{
-      const fi = new Image();
-      fi.onload = ()=>{ ctx.drawImage(fi,0,0,OUT_W,OUT_H); resolve(); };
-      fi.onerror = resolve; fi.src = state.selectedFrame.src;
-    });
+    const frameImg = await loadImage(state.selectedFrame.src).catch(()=>null);
+    if(frameImg) ctx.drawImage(frameImg, 0, 0, OUT_W, OUT_H);
   }
 
   const finalDataUrl = canvas.toDataURL('image/jpeg', 0.92);
@@ -941,7 +1235,7 @@ async function uploadToImgbb(dataUrl){
 
 async function showDownloadStage(finalDataUrl){
   document.getElementById('printingStageInfo').style.display = 'none';
-  document.getElementById('printNavTitle').textContent = '照片完成！';
+  document.getElementById('printNavTitle').textContent = '努力準備中';
 
   const popup = document.getElementById('donePopup');
   const qrWrap = document.getElementById('popupQrWrap');
@@ -963,7 +1257,7 @@ async function showDownloadStage(finalDataUrl){
     try{
       const url = await uploadToImgbb(finalDataUrl);
       qrImg.src = makeQrCodeUrl(url);
-      qrLabel.textContent = '掃描下載照片';
+      qrLabel.textContent = '';
     }catch(err){
       console.error('上傳失敗', err);
       qrWrap.style.display = 'none';
