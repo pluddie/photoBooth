@@ -69,7 +69,7 @@
   #copyright-footer{
     flex-shrink:0;
     text-align:center;
-    padding:6px 0 max(8px, env(safe-area-inset-bottom));
+    padding:14px 0 max(18px, env(safe-area-inset-bottom));
     font-family:var(--font);
     font-size:11px;
     font-weight:700;
@@ -410,7 +410,7 @@
     position:absolute; inset:0; background:#fff;
     opacity:0; pointer-events:none; border-radius:18px; z-index:3;
   }
-  .flash-overlay.fire{ animation:flashFire .3s ease-out; }
+  .flash-overlay.fire{ animation:flashFire .12s ease-out; }
   @keyframes flashFire{ 0%{opacity:1} 100%{opacity:0} }
   .countdown-num{
     position:absolute; inset:0;
@@ -744,13 +744,6 @@ const FRAME_DATA_2x2 = [
 ];
 function getFramePool(){ return state.layout === '2x3' ? FRAME_DATA_2x3 : FRAME_DATA_2x2; }
 
-const EMAILJS_CONFIG = {
-  enabled: false, // 已改用 Google Drive，email 停用
-  publicKey: 'tOXPtKhdfr5mQNlps',
-  serviceId: 'service_t7d5jeu',
-  templateId: 'template_ivd4njg',
-  toEmail: 'pluddiedoodle@gmail.com'
-};
 
 const IMGBB_CONFIG = {
   enabled: true,
@@ -1005,7 +998,7 @@ function startCountdownThenShoot(){
     if(n > 0){ showCountdownNumber(numEl, n); }
     else{
       clearInterval(interval);
-      setTimeout(()=>{ takeSnapshot(); state.counting = false; setCamButtonsDisabled(false); }, 700);
+      setTimeout(()=>{ takeSnapshot(); state.counting = false; setCamButtonsDisabled(false); }, 200);
     }
   }, 1000);
 }
