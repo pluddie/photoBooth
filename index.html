@@ -807,6 +807,9 @@ async function requestCameraPermission(){
   return state.stream;
 }
 
+// 頁面一載入就跳出相機權限請求，不用等使用者點擊開始按鈕
+requestCameraPermission();
+
 screens.welcome.addEventListener('click', async ()=>{
   await requestCameraPermission();
   goTo('layout');
