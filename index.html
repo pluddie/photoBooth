@@ -446,7 +446,7 @@
     background:var(--surface);
     border-radius:28px;
     padding:32px 28px 28px;
-    width:100%; max-width:360px;
+    width:100%; max-width:420px;
     display:flex; flex-direction:column; align-items:center; gap:18px;
     box-shadow:0 30px 60px -12px #00000070;
     transform:scale(.88) translateY(24px);
@@ -464,24 +464,39 @@
     text-align:center;
     line-height:1.4;
   }
+  .popup-qr-row{
+    display:flex;
+    gap:32px;
+    align-items:flex-start;
+    justify-content:center;
+  }
+  .popup-qr-item{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+    flex:1;
+    min-width:0;
+  }
   .popup-qr-wrap{
     /* 強制保持白底，QR code 不能跟著深色主題反轉，否則會影響掃描成功率 */
     background:#ffffff;
     border-radius:20px;
-    padding:14px;
+    padding:10px;
     border:2px solid var(--line);
   }
   .popup-qr-wrap img{
     display:block;
-    width:200px; height:200px;
+    width:150px; height:150px;
     border-radius:10px;
   }
   .popup-qr-label{
     font-family:var(--font);
     font-weight:700;
-    font-size:15px;
+    font-size:14px;
     color:var(--muted);
     text-align:center;
+    line-height:1.4;
   }
   .popup-btn{
     width:100%;
@@ -638,10 +653,20 @@
     <div class="popup-card">
       <div class="popup-icon">🎉</div>
       <div class="popup-title">照片準備好囉！</div>
-      <div class="popup-qr-wrap" id="popupQrWrap">
-        <img id="popupQrImg" alt="QR Code" src="">
+      <div class="popup-qr-row">
+        <div class="popup-qr-item">
+          <div class="popup-qr-wrap" id="popupQrWrap">
+            <img id="popupQrImg" alt="QR Code" src="">
+          </div>
+          <div class="popup-qr-label" id="popupQrLabel">正在產生 QR Code…</div>
+        </div>
+        <div class="popup-qr-item">
+          <div class="popup-qr-wrap">
+            <img src="frames/ig-qr.png" alt="Instagram QR Code">
+          </div>
+          <div class="popup-qr-label">歡迎追蹤分享照片</div>
+        </div>
       </div>
-      <div class="popup-qr-label" id="popupQrLabel">正在產生 QR Code…</div>
       <button class="popup-btn" id="btnNextShot">再玩一次</button>
     </div>
   </div>
@@ -1069,7 +1094,7 @@ async function showDownloadStage(uploadUrl){
   if(IMGBB_CONFIG.enabled){
     if(uploadUrl){
       qrImg.src = makeQrCodeUrl(uploadUrl);
-      qrLabel.textContent = '';
+      qrLabel.textContent = '掃描下載電子檔';
       qrWrap.style.display = '';
     } else {
       qrWrap.style.display = 'none';
